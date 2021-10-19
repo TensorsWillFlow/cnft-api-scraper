@@ -25,14 +25,18 @@ let rareItemsList = [
 ];
 
 const apiCall = () => {
-  if (200 >= pageNum) {
+  if (40 >= pageNum) {
     const payload = {
       search: "",
+      nsfw: false,
+      sold: false,
       sort: "date",
-      order: "desc",
+      // order: "desc",
       page: pageNum,
       verified: true,
       project: "CardanoCity",
+      // count: 200,
+      verified: true,
     };
 
     console.log("Getting units for page: ".green, pageNum);
@@ -40,15 +44,10 @@ const apiCall = () => {
     api
       .post("/market/listings", payload)
       .then((res) => {
-        rawUnits.push(...res.data.assets);
+        rawUnits.push(...res.data.results);
       })
       .catch((err) => {
-        console.log(
-          "Error Sending the Request For Page: ",
-          pageNum,
-          " Error: ",
-          err
-        );
+        console.log("Error Sending the Request For Page: ", pageNum, " Error: ", err);
       });
 
     pageNum++;
@@ -68,8 +67,7 @@ const printRareUnits = () => {
 
     if (unit) {
       const contents = extractContents(item);
-      const valuePerADA =
-        value && priceInADA ? Math.trunc(value / priceInADA) : "N/A";
+      const valuePerADA = value && priceInADA ? Math.trunc(value / priceInADA) : "N/A";
 
       try {
         contents.forEach((itm) => {
@@ -102,15 +100,13 @@ const printRareUnits = () => {
     console.table(sortedUnitsByItem);
     showPaperHandsMsg();
   } else {
-    console.log(
-      `\nNo ${rareitem} found below ${maxprice} ADA... ARE WE MOONING?`.red
-    );
+    console.log(`\nNo ${rareitem} found below ${maxprice} ADA... ARE WE MOONING?`.red);
   }
 };
 
 if (mode === "get-units") {
   console.log("\nRetreiving CardanoCity units from cnft...\n");
-  const interval = setInterval(apiCall, 3000 * Math.random());
+  const interval = setInterval(apiCall, 2000 * Math.random());
 
   function clearIntervalAndWriteFile() {
     console.log(
@@ -118,8 +114,7 @@ if (mode === "get-units") {
         .cyan
     );
     console.log(
-      `\nSuccessfully retreived ${rawUnits.length} CardanoCity units from cnft...`
-        .magenta
+      `\nSuccessfully retreived ${rawUnits.length} CardanoCity units from cnft...`.magenta
     );
     clearInterval(interval);
     jsonfile.writeFileSync(file, rawUnits);
@@ -137,27 +132,21 @@ if (mode === "get-units") {
 }
 
 function extractUnitNum(item) {
-  if (item?.metadata?.name) {
-    if (item.metadata.name.includes("CardanoCityUnit"))
-      return Number(item.metadata.name.split("CardanoCityUnit")[1]);
+  if (item?.asset?.metadata?.name) {
+    if (item?.asset?.metadata?.name.includes("CardanoCityUnit"))
+      return Number(item?.asset?.metadata?.name?.split("CardanoCityUnit")[1]);
   } else return "N/A";
 }
 
 function extractValue(item) {
-  const tags = item?.metadata?.tags;
-  if (tags && tags.length > 1) {
-    return Number(
-      tags.filter((tag) => tag && tag.value && tag.value.length > 1)[0]?.value
-    );
-  } else return "N/A";
+  const value = item?.asset?.metadata?.value;
+  return Number(value) || "N/A";
 }
 
 function extractContents(item) {
-  const tags = item?.metadata?.tags;
-  if (tags && tags.length > 1) {
-    return tags.filter(
-      (tag) => tag && tag.contents && tag.contents.length > 1
-    )[0]?.contents;
+  const contents = item?.asset?.metadata?.contents;
+  if (contents && contents.length > 1) {
+    return contents.filter((content) => content);
   } else return "N/A";
 }
 
@@ -167,8 +156,7 @@ function showPaperHandsMsg() {
       .cyan
   );
   console.log(
-    "\n                       They had their chance to be apart of our glorious metaverse."
-      .green,
+    "\n                       They had their chance to be apart of our glorious metaverse.".green,
     "\n\n                  WIPE THE FLOOOOOOOR WITH THESE PAPERHANDED BITCHES. CITIZEN'S STRONK!"
       .green
   );
